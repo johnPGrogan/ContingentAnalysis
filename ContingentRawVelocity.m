@@ -1,7 +1,7 @@
 % ContingentRawVelocity
 
 clear; %close all;
-load('ContingentAnalysis.mat', 'doHC', 'cg','on_off','xlabs','bad_sub','bad_sub2','nConds','tt','nPP');
+load('ContingentAnalysis.mat', 'doHC', 'cg','on_off','xlabs','bad_sub','bad_sub2','nConds','tt','nPP','rtCutoffs');
 %% velocities
 % snip raw saccade trajectories
 clear S
@@ -66,15 +66,15 @@ MAX_AMP           = 400;    % the target is 300 px
 EXCLUDE_BAD_VEL   = true;   % whether to discard velocity < 100 deg/s 
 EXCLUDE_SUB_MIN_TRIALS = 10;   % put zero to include everyone (ok for mixed model)
 
-ok = rawInfo.sAmpl < MAX_AMP ...
-    & rawInfo.sRT > 100 ...     
-    & rawInfo.sRT < 600 ...
+ok = rawInfo.sAmpl <= MAX_AMP ...
+    & rawInfo.sRT >= rtCutoffs(1) ...     
+    & rawInfo.sRT <= rtCutoffs(2) ...
     & rawInfo.sBlink==0 ...
     ;
-ok2 = rawInfo.sAmpl < MAX_AMP & rawInfo.sRT > 100 & rawInfo.sRT < 600 & rawInfo.sBlink==0;
+ok2 = rawInfo.sAmpl <= MAX_AMP & rawInfo.sRT >= rtCutoffs(1) & rawInfo.sRT <= rtCutoffs(2) & rawInfo.sBlink==0;
 ok(:,3,:) = ok2(:,3,:);
 if EXCLUDE_BAD_VEL
-  ok = ok & rawInfo.sSpd > (2.5)   & rawInfo.sSpd < (80);
+  ok = ok & rawInfo.sSpd >= (2.5)   & rawInfo.sSpd <= (80);
 end
 
 % split by trialtype

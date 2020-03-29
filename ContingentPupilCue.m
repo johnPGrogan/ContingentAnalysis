@@ -144,18 +144,8 @@ legend([h{:,1}], cg,'Location','Best')
 % 50:70 is 1000 to 1400 ms
 roi = 50:70; 
 P_roi = reshape(nanmean(p(:,roi,:,1:2),2),[size(p,1), 2,2,2]); 
-[~,Tab]=anovanTable( P_roi, ...
-  'varnames', {'sub','mot','cont','drg'},'display',0 , 'model', [
-  1 0 0 0
-  0 1 0 0
-  0 0 1 0
-  0 0 0 1
-  0 1 1 0
-  0 1 0 1
-  0 0 1 1 
-  0 1 1 1
-  ])
-pupAnova = rmanova( P_roi, {'sub','mot','cont','drg'},'categorical',4 )
+
+pupAnova = rmanova( P_roi, {'sub','mot','cont','drg'},'categorical', [2 3 4],'DummyVarCoding','effects')
 
 % then via permutation t-test
 py0  = reshape( p(:,:,:,1:2), size(p,1),size(p,2), 2,2,2 );
@@ -182,7 +172,7 @@ imagep(pval, {'c','mot','cont','mot*cont','drg','mot*drg','cont*drg','m*c*d'})
 %% 2-ways
 
 PRoiCont = reshape(nanmean(p(:,roi,1:2,1:2),2),[size(p,1), 2,2]); 
-pAnTab{1} = rmanova( PRoiCont, {'sub','cont','drg'} ,'categorical',3);
+pAnTab{1} = rmanova( PRoiCont, {'sub','cont','drg'} ,'categorical', [2 3],'DummyVarCoding','effects');
 py0  = reshape( p(:,:,1:2,1:2), size(p,1),size(p,2), 2,2 );
 % [~,pval]=permutationOLS(py0);
 py   = reshape( permute(py0,[1 3 4 2]), [],size(p,2) ); 
@@ -198,7 +188,7 @@ imagep(pvalCont, {'c','cont','drg','cont*drg'})
 
 
 PRoiMot = reshape(nanmean(p(:,roi,3:4,1:2),2),[size(p,1), 2,2]); 
-pAnTab{2} = rmanova( PRoiMot, {'sub','mot','drg'} ,'categorical',3);
+pAnTab{2} = rmanova( PRoiMot, {'sub','mot','drg'} ,'categorical', [2 3],'DummyVarCoding','effects');
 
 py0  = reshape( p(:,:,3:4,1:2), size(p,1),size(p,2), 2,2 );
 % [~,pval]=permutationOLS(py0);

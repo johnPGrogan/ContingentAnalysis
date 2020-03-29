@@ -42,21 +42,21 @@ clear inf tt rw
 for i=1:nPP % for each dataset
   for j=1:nConds
     if ~isempty(result{i,j})
-    inf(i,j).amp = nancat( 1, result{i,j}.sAmpl  ).*dpp; % ok, bad idea to use inf as a variable, but...
-    inf(i,j).vel = nancat( 1, result{i,j}.sSpd   ).*dpp;
-    inf(i,j).rt  = nancat( 1, result{i,j}.sRT    );
-    inf(i,j).ep  = nancat( 1, result{i,j}.sEndpt ).*dpp;
-    inf(i,j).bln = nancat( 1, result{i,j}.sBlink );
+    inf1(i,j).amp = nancat( 1, result{i,j}.sAmpl  ).*dpp; % ok, bad idea to use inf as a variable, but...
+    inf1(i,j).vel = nancat( 1, result{i,j}.sSpd   ).*dpp;
+    inf1(i,j).rt  = nancat( 1, result{i,j}.sRT    );
+    inf1(i,j).ep  = nancat( 1, result{i,j}.sEndpt ).*dpp;
+    inf1(i,j).bln = nancat( 1, result{i,j}.sBlink );
     
     % trial types
     tt{i,j}  = nancat( 1, result{i,j}.trialType );
     rw{i,j}  = nancat( 1, result{i,j}.reward    ); 
     
     % reflect x-axis around 512, keep y unchanged
-    targDir = repmat(nancat( 1, result{i,j}.targetDir ), 1, size(inf(i,j).amp,2));
-    inf(i,j).epRefl = real(inf(i,j).ep);
-    inf(i,j).epRefl(targDir==1) = - inf(i,j).epRefl(targDir==1) + (1024 .* dpp);
-    inf(i,j).epRefl = complex(inf(i,j).epRefl, imag(inf(i,j).ep));
+    targDir = repmat(nancat( 1, result{i,j}.targetDir ), 1, size(inf1(i,j).amp,2));
+    inf1(i,j).epRefl = real(inf1(i,j).ep);
+    inf1(i,j).epRefl(targDir==1) = - inf1(i,j).epRefl(targDir==1) + (1024 .* dpp);
+    inf1(i,j).epRefl = complex(inf1(i,j).epRefl, imag(inf1(i,j).ep));
     end
   end
 end
@@ -64,7 +64,7 @@ tt=sq(nancat(tt));   % trial_type ( trial, sub, drug ) = 1/2/3/4
 rw=sq(nancat(rw));   % reward = how much they actually won = 0/10
 
 %%
-info = catStruct(3,inf,''); % info.amp ( trial, saccade, sub, drug )
+info = catStruct(3,inf1,''); % info.amp ( trial, saccade, sub, drug )
 % exclude bad trials
 % note: the criteria can actually make a difference to the statistics.
 
@@ -79,31 +79,33 @@ MAX_AMP           = 400.*dpp;    % the target is 300 px
 MIN_AMP           = 1; % 1 vis deg
 EXCLUDE_BAD_VEL   = true;   % whether to discard velocity < 100 deg/s 
 
+rtCutoffs = [180 580];
 MODE = 'not-firstonly'; % which exclusion criteria mode to use (See switch below)
 switch MODE
   case 'firstonly' 
     % only use first saccade of the trial; discard trial if it's not valid
     FIRST_ONLY=true; 
-    ok = info.amp > MIN_AMP...
-       & info.amp < MAX_AMP ...
-       & info.rt > 100 ...     
-       & info.rt < 600 ...
+    ok = info.amp >= MIN_AMP...
+       & info.amp <= MAX_AMP ...
+       & info.rt >= rtCutoffs(1) ...     
+       & info.rt <= rtCutoffs(2) ...
        ;
   case 'not-firstonly'
     FIRST_ONLY        = false;   % use the first valid saccade of the trial
-    ok = info.amp > MIN_AMP...
-       & info.amp < MAX_AMP ...
-       & info.rt > 100 ...     
-       & info.rt < 600 ...
+    ok = info.amp >= MIN_AMP...
+       & info.amp <= MAX_AMP ...
+       & info.rt >= rtCutoffs(1) ...     
+       & info.rt <= rtCutoffs(2) ...
        ;
 end
 
 % use 
-ok2 = info.amp > MIN_AMP & info.amp < MAX_AMP & info.rt > 100 & info.rt < 600;
+ok2 = info.amp >= MIN_AMP & info.amp <= MAX_AMP & info.rt >= rtCutoffs(1) & info.rt <= rtCutoffs(2);
+       
 ok(:,:,:,3) = ok2(:,:,:,3);
 
 if EXCLUDE_BAD_VEL
-  ok = ok & info.vel > (2.5.*dpp)   & info.vel< (80.*dpp);
+  ok = ok & info.vel >= (2.5.*dpp)   & info.vel<= (80.*dpp);
 end
 
 % make velocity of bad saccades nan
@@ -203,8 +205,8 @@ for i = 1:length(dv)
     %%%%%
     % Statistical method 2:
     % repeated measures ANOVA on per-condition means:
-    anTab{i} = rmanova( reshape(nanmean(t.(dv{i})),nPP,2,2,2), {'s','mot','cont','drg'} , 'categorical', 4 );
-    pvalues(1:8,i) = anTab{i}.pValue';
+    anTab{i} = rmanova( reshape(nanmean(t.(dv{i})),nPP,2,2,2), {'s','mot','cont','drg'}, 'categorical', [2 3 4] ,'DummyVarCoding','effects');
+%     pvalues(1:8,i) = anTab{i}.pValue';
 %     pvalues(9,i) = M{i}.Coefficients.pValue(8);
     
 end
@@ -221,7 +223,7 @@ for i = 1:length(dv)
 
     
     % repeated measures ANOVA on per-condition means:
-    anTab2{i,1} = rmanova(reshape(nanmean(t.(dv{i})(:,:,1:2,:)),nPP,2,2), {'s','cont','drg'}, 'categorical', 3 );
+    anTab2{i,1} = rmanova(reshape(nanmean(t.(dv{i})(:,:,1:2,:)),nPP,2,2), {'s','cont','drg'}, 'categorical', [2 3], 'DummyVarCoding','effects' );
     pvalues2(1:4,i,1) = anTab2{i,1}.pValue';
 %     pvalues2(5,i,1) = M2{i,1}.Coefficients.pValue(4);
     
@@ -230,12 +232,13 @@ for i = 1:length(dv)
     M2{i,2} = fitlme( T, sprintf('%s ~ 1 + mot * drg + (1|sub)',dv{i}) );
     
     % repeated measures ANOVA on per-condition means:
-    anTab2{i,2} = rmanova(reshape(nanmean(t.(dv{i})(:,:,3:4,:)),nPP,2,2), {'s','mot','drg'}, 'categorical', 3 );
+    anTab2{i,2} = rmanova(reshape(nanmean(t.(dv{i})(:,:,3:4,:)),nPP,2,2), {'s','mot','drg'}, 'categorical', [2 3] ,'DummyVarCoding','effects');
     pvalues2(1:4,i,2) = anTab2{i,2}.pValue';
 %     pvalues2(5,i,2) = M2{i,2}.Coefficients.pValue(4);
     
 
 end
+
 
 %% two two-way anova on each drug
 
@@ -248,8 +251,8 @@ for i = 1:length(dv)
 
     
     % repeated measures ANOVA on per-condition means:
-    anTab3{i,1} = rmanova(reshape(nanmean(t.(dv{i})(:,:,:,1)),nPP,2,2), {'s','mot', 'cont'}, 'categorical', 3 );
-    pvalues3(1:4,i,1) = anTab3{i,1}.pValue';
+    anTab3{i,1} = rmanova(reshape(nanmean(t.(dv{i})(:,:,:,1)),nPP,2,2), {'s', 'mot', 'cont'}, 'categorical', [2 3] ,'DummyVarCoding','effects');
+%     pvalues3(1:4,i,1) = anTab3{i,1}.pValue';
 %     pvalues3(5,i,1) = M3{i,1}.Coefficients.pValue(4);
     
     % certain rewards 
@@ -257,12 +260,13 @@ for i = 1:length(dv)
 %     M3{i,2} = fitlme( T, sprintf('%s ~ 1 + mot * drg + (1|sub)',dv{i}) );
     
     % repeated measures ANOVA on per-condition means:
-    anTab3{i,2} = rmanova(reshape(nanmean(t.(dv{i})(:,:,:,2)),nPP,2,2), {'s','mot', 'cont'}, 'categorical', 3 );
-    pvalues3(1:4,i,2) = anTab3{i,2}.pValue';
+    anTab3{i,2} = rmanova(reshape(nanmean(t.(dv{i})(:,:,:,2)),nPP,2,2), {'s', 'mot','cont'}, 'categorical', [2 3] ,'DummyVarCoding','effects');
+%     pvalues3(1:4,i,2) = anTab3{i,2}.pValue';
 %     pvalues3(5,i,2) = M3{i,2}.Coefficients.pValue(4);
     
 
 end
+
 
 %% HC
 
@@ -291,41 +295,70 @@ if doHC
         % Statistical method 2:
         % repeated measures ANOVA on per-condition means:
         % ON vs OFF vs HC
-        anTabHC{i,1} = rmanova( reshape(nanmean(tHC.(dv{i})),nPP,2,2,3), {'s','mot','cont','group'}, 'categorical', 4 );
-        pvaluesHC(1:8,i,1) = anTabHC{i,1}.pValue';
+        anTabHC{i,1} = rmanova( reshape(nanmean(tHC.(dv{i})),nPP,2,2,3), {'s','mot','cont','group'}, 'categorical', [2 3 4], 'DummyVarCoding','effects' );
+%         pvaluesHC(1:8,i,1) = anTabHC{i,1}.pValue';
     %     pvaluesHC(9,i) = M2{i}.Coefficients.pValue(8);
 
 
         % ON vs HC
-        anTabHC{i,2} = rmanova( reshape(nanmean(tHC.(dv{i})(:,:,:,[1 3])),nPP,2,2,2), {'s','mot','cont','group'},'categorical',4 );
-        pvaluesHC(1:8,i,2) = anTabHC{i,2}.pValue';
+        anTabHC{i,2} = rmanova( reshape(nanmean(tHC.(dv{i})(:,:,:,[1 3])),nPP,2,2,2), {'s','mot', 'cont','group'}, 'categorical', [2 3 4], 'DummyVarCoding','effects');%,'categorical', [2 3 4]);
+%         pvaluesHC(1:8,i,2) = anTabHC{i,2}.pValue';
 
         % OFF vs HC
-        anTabHC{i,3} = rmanova( reshape(nanmean(tHC.(dv{i})(:,:,:,[2 3])),nPP,2,2,2), {'s','mot','cont','group'},'categorical',4 );
-        pvaluesHC(1:8,i,3) = anTabHC{i,3}.pValue';
+        anTabHC{i,3} = rmanova( reshape(nanmean(tHC.(dv{i})(:,:,:,[2 3])),nPP,2,2,2), {'s','mot', 'cont','group'}, 'categorical', [2 3 4], 'DummyVarCoding','effects');%        pvaluesHC(1:8,i,3) = anTabHC{i,3}.pValue';
         
         
         % just HC
-        anTabHC{i,4} = rmanova( reshape(nanmean(tHC.(dv{i})(:,:,:,[3])),nPP,2,2), {'s','mot','cont'} );
-        pvaluesHC(1:4,i,4) = anTabHC{i,4}.pValue';
+        anTabHC{i,4} = rmanova( reshape(nanmean(tHC.(dv{i})(:,:,:,[3])),nPP,2,2), {'s','mot', 'cont'}, 'categorical', [2 3], 'DummyVarCoding','effects');
+%         pvaluesHC(1:4,i,4) = anTabHC{i,4}.pValue';
     end
 end
-%% %%%%%%% plot everything  
+%% two-way anova on motiv effects
+
+for i = 1:length(dv)
+    
+    % repeated measures ANOVA on per-condition means:
+    anTab4{i,1} = rmanova( sq(-diff(reshape(nanmean(t.(dv{i})),nPP,2,2,2),[],2)), {'s','cont','drg'}, 'categorical', [2 3], 'DummyVarCoding','effects' );
+
+    % do HC stuff too
+    % ON, OFF, HC
+    x = sq(-diff(reshape(nanmean(tHC.(dv{i})),nPP,2,2,3),[],2));
+    x = nancat(3, x(:,:,1:2), [NaN(size(x(:,:,3))); x(:,:,3)]); % shift HC to have different ppnums - allows between
+    
+    anTab4HC{i,1} = rmanova(x, {'s','cont','drg'}, 'categorical', [2 3], 'DummyVarCoding','effects' );
+    
+    % ON vs HC
+    anTab4HC{i,2} = rmanova( x(:,:,[1 3]), {'s','cont','group'}, 'categorical', [2 3], 'DummyVarCoding','effects' );
+    
+    % OFF vs HC
+    anTab4HC{i,3} = rmanova( x(:,:,[2 3]), {'s','cont','group'}, 'categorical', [2 3], 'DummyVarCoding','effects' );
+    
+    % HC only
+    anTab4HC{i,4} = rmanova(x(:,:,[3]), {'s','cont'}, 'categorical', [2], 'DummyVarCoding','effects' );
+    
+end
+% reshape(nanmean(tHC.(dv{i})),nPP,2,2,3)
+
+% now do HC ones too
+
+
+%% %%%%%%% plot everything
 
 nDVs = 4; % how many DVs to plot
 
 ylabs = {'Peak Velocity (deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
     'Endpoint Varibility (deg)','Peak Velocity (deg/s)'};
 xlabs = {'Perform','Random','+10p','0p'};
-xTitle = {'Contingent              Reward', '    Motivation           Expectation'};
+xTitle = {'Contingent                    Reward  ', '   Motivation                 Expectation '};
+xTitle2 = {'Contingent         Reward  ', '   Motivation      Expectation '};
 plotargs = {'LineWidth',2.5};
 condCols = [1 2; 3 4];
 cols = get(gca,'ColorOrder'); %cols = cols([3 1 2], :);
 xvals = [1:4]' + [-.1 0 .1];
 
-figure();
+figure(1);clf;
 for i = 1:nDVs
-    subplot(ceil(nDVs/2),2,i)
+    if i==1; subplot(2,2,i); else subplot(2,3,i+2);end
     if doHC % get variable
         data = sq(nanmean(tHC.(dv{i})));
     else
@@ -345,13 +378,67 @@ for i = 1:nDVs
         end
     end
     ylabel(ylabs{i})
+%     if i==1; yl = max(abs(ylim)); ylim([-yl, yl]); end
     set(gca,'xtick',1:4,'xticklabel',xlabs);
+    if i>1; set(gca,'YTick', linspace(min(yticks), max(yticks), 3)); end
     xlim([.75 4.25])
     box off
-    xlabel(xTitle);
+    if i==3; xlabel(xTitle2); end
+    if i==1; xlabel(xTitle);legend(h, on_off, 'location', [0.1893 0.8160 0.1304 0.1119]); end
     
 end
-legend(h, on_off, 'location','Best')
+
+
+% plot motiv effects
+
+nDVs = 4; % how many DVs to plot
+
+ylabs = {'Peak Velocity (deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
+    'Endpoint Varibility (deg)','Peak Velocity (deg/s)'};
+xlabs = {'Contingent','Guaranteed'};
+xTitle = {'Motivational effects'};
+plotargs = {'LineWidth',2.5};
+condCols = [1 2; 3 4];
+cols = get(gca,'ColorOrder'); %cols = cols([3 1 2], :);
+xvals = [1:2]' + [-.1 0 .1];
+
+figure(1);
+for i = 1:1
+    subplot(2,2,2);
+    if doHC % get variable
+        data = sq(-diff(reshape(nanmean(tHC.(dv{i})),nPP,2,2,3),[],2));
+    else
+        data = sq(-diff(reshape(nanmean(t.(dv{i})),nPP,2,2,2),[],2));
+    end
+    
+    % plot each pair of conditions
+    for j = 1:2
+        set(gca,'ColorOrder',cols); % keep colour order
+        if doHC
+            h(3) = errorBarPlot( data(:,:,3), 'type','line','plotargs',plotargs, 'doStats', 0);
+            hold on;
+        end
+        h(1:2) = errorBarPlot( data(:,:,1:2), 'type','line','plotargs',plotargs, 'doStats', 0);
+        for k = 1:2+doHC
+            h(k).Color = cols(k,:);
+        end
+    end
+    ylabel(['\Delta ' ylabs{i}])
+    yl = ([-1 1] .* repmat(max(abs(ylim)),1,2));
+%     ylim(yl);
+    set(gca,'xtick',1:2,'xticklabel',xlabs);%,'YTick', linspace(yl(1), yl(2), 3));
+    xlim([.75 2.25]);
+    box off
+    xlabel(xTitle);
+    yline(0,':k');
+    
+%     if anTab4{i}.pValue(end) < .05
+        text(0.5, 0.9, repmat('*',1, sum(anTab4{i}.pValue(end) < [.05 .01 .001])),'Units','Normalized','FontSize',20);
+%     end
+    
+end
+% legend(h(1:3), on_off, 'location','Best')
+
 
 %% plot with individual points
 
@@ -412,6 +499,13 @@ for i = 1:nDVs
     xlabel(xTitle);
 end
 legend(h(:,1), on_off, 'location','Best')
+
+
+
+
+
+
+
 
 %% Between subject correlations
 figure()
@@ -476,10 +570,10 @@ set(0,'DefaultAxesColorOrder', 'factory'); % restore
 
   
 %% save
-save('ContingentAnalysis.mat','infg','info','t','tt','rw','dmvr','vr','doHC',...
+save('ContingentAnalysis.mat','inf1','infg','info','t','tt','rw','dmvr','vr','doHC',...
     'nConds','on_off','nTrAll','cond_names','dpp','nPD','bad_sub', 'cg',...
     'xlabs', 'ok_g','bad_sub2','nPP','anTab','anTabHC','anTab2','anTab3','nConds',...
-    'tHC','dv');
+    'tHC','dv','rtCutoffs','anTab4','anTab4HC');
 
 
 %% extra analyses

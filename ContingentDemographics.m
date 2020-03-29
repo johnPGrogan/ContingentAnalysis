@@ -76,14 +76,14 @@ statsTable = array2table(NaN(5,length(v)));
 statsTable.Properties.VariableNames = v;
 statsTable.Properties.RowNames = {'PD mean', 'PD SD', 'HC mean', 'HC SD', 'p'};
 for i = 1:length(v)
-    statsTable.(v{i})(1) = nanmean(pdTable.(v{i})); % PD mean
-    statsTable.(v{i})(2) = nanstd(pdTable.(v{i})); % PD SD
+    statsTable.(v{i})(1) = round(nanmean(pdTable.(v{i})),2); % PD mean
+    statsTable.(v{i})(2) = round(nanstd(pdTable.(v{i})),2); % PD SD
     
-    statsTable.(v{i})(3) = nanmean(hcTable.(v{i})); % HC mean
-    statsTable.(v{i})(4) = nanstd(hcTable.(v{i})); % HC SD
+    statsTable.(v{i})(3) = round(nanmean(hcTable.(v{i})),2); % HC mean
+    statsTable.(v{i})(4) = round(nanstd(hcTable.(v{i})),2); % HC SD
    
     [~, statsTable.(v{i})(5)] = ttest2(pdTable.(v{i}), hcTable.(v{i})); % p val from t-test
-    
+    statsTable.(v{i})(5) = round(statsTable.(v{i})(5), 4);
 end
 
 

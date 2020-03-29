@@ -264,7 +264,7 @@ dens = permute(reshape(microDens(:,:,:,1:3),[nPP,100,2,2,3]),[1,3,4,5,2]);
 meanDens = nanmean(dens, 5); % mean across time
 
 vnames = {'pp','cont','mot','drug'};
-meanDensStats = rmanova(meanDens(:,:,:,1:2), vnames, 'categorical',4);
+meanDensStats = rmanova(meanDens(:,:,:,1:2), vnames, 'categorical',[2 3 4],'DummyVarCoding','effects');
 
 
 figure();
@@ -287,7 +287,7 @@ box off
 
 meanDrift = reshape(sq(nanmean(meanSpeedCond,[5,2])), [nPP,2,2,3]);
 
-meanDriftStats = rmanova(meanDrift(:,:,:,1:2), vnames, 'categorical',4);
+meanDriftStats = rmanova(meanDrift(:,:,:,1:2), vnames, 'categorical', [2 3 4],'DummyVarCoding','effects');
 
 
 figure();
