@@ -1,7 +1,7 @@
 % ContingentVelocity
 
 clear; close all;
-load('./ContingentAnalysis.mat','doHC', 'on_off','cg', 'tt','nPD', 'xlabs', 'nConds', 'vr','nPP','rtCutoffs');
+load('./ContingentAnalysis.mat','doHC', 'on_off','cg', 'tt','nPD', 'xlabs', 'nConds', 'vr','nPP','rtCutoffs','dpp');
 if doHC, saccFile = './saccades_parsed_stretched_HC.mat';
 else,    saccFile= './saccades_parsed_stretched.mat';
 end
@@ -35,13 +35,15 @@ bad_sub(:,1:2) = repmat(any(bad_sub(:,1:2),2),[1 2]);
 Af(repmat(permute(ok_1==0,[2,5,1,3,4]), 1, 50)) = NaN;
 Af(repmat(permute(bad_sub==1, [3,4,1,2,5]), [4,50,1,1,120])) = NaN;
 
+Af = Af * dpp; % convert from pix to deg
 
 %% look at average velocity 
 
 vAf = permute(real(diff(Af,[],2)), [3,2,1,4,5]); % take horizontal velocity
+vAf = vAf .* 1000; % from deg/ms -> deg/sec
 vAf = vAf .* repmat(sign(vAf(:,10,:,:,:,:)),[1 49 1 1 1 1]); % flip leftwards
 
-vAf(repmat(any(abs(vAf)>40,2),[1 49 1 1 1])) = NaN; % remove outlying vel due to blinks
+vAf(repmat(any(abs(vAf)>(40*dpp*1000),2),[1 49 1 1 1])) = NaN; % remove outlying vel due to blinks
 
 % smooth
 vAf = movmean(vAf, 3, 2); % smooth by 3 time points
@@ -131,9 +133,10 @@ dmvAf = sq(-diff(mvAf,[],3)); % rew effects
 
 %% acceleration
 vAf2 = permute(real(diff(Af,[],2)), [3,2,1,4,5]); % horizontal acceleration
+vAf2 = vAf2 .* 1000; % from deg/ms -> deg/sec
 vAf2 = vAf2 .* repmat(sign(vAf2(:,10,:,:,:,:)),[1 49 1 1 1 1]); % flip those that went left
 
-vAf2(repmat(any(abs(vAf2)>40,2),[1 49 1 1 1])) = NaN; % remove outlying vel due to blinks
+vAf2(repmat(any(abs(vAf2)>(40*dpp*1000),2),[1 49 1 1 1])) = NaN; % remove outlying vel due to blinks
 
 vAf2 = movmean(vAf2,3,2); % smooth
 vAccel = (diff(vAf2,[],2));
@@ -220,7 +223,7 @@ for i = 1:2
     box off;
     ylabel([cg{i} ' effect']);
     xlim([0 50])
-    ylim([-.9 .9])
+    ylim([-25 25])
 
     if doPerm
         y1 = diff( sq(dmvAf(:,:,i,1:2)),[],3); % PD ON vs OFF
@@ -239,12 +242,12 @@ for i = 1:2
         end
     end
    if i==1
-       title('Velocity');
+       title('Velocity (deg/s)');
        set(gca,'XTick',[]);
    else
        xlabel('timepoint within saccade')
    end
-   set(gca,'XTick',0:25:50);
+   set(gca,'XTick',0:25:50, 'YTick', -20:20:20);
 
 end
 
@@ -256,7 +259,7 @@ for i = 1:2
     hold on; yline(0, 'k:');
     box off;
    xlim([0 50])
-   ylim([-.15 .15])
+    ylim([-5 5])
 
 
     if doPerm
@@ -276,13 +279,13 @@ for i = 1:2
         end
     end
    if i==1
-       title('Acceleration');
+       title('Acceleration (deg/s^2)');
        set(gca,'XTick',[]);
    else
        xlabel('timepoint within saccade')
 
    end
-   set(gca,'XTick',0:25:50,'YTick',-.1:.1:.1);
+   set(gca,'XTick',0:25:50,'YTick',-5:5:5);
 
 end
 

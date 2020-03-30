@@ -127,11 +127,12 @@ doPerm = 1;
 useClust = 1;
 nPerms = 5000;
 plotfreq = 5:125;
+xlabs = {'Perform','Random','+10p','0p'};
 for i = 1:4
     subplot(4,4,i)
     errorBarPlot(sq(microDens(:,:,i,1:n)),'area',1, 'doStats', 0);%,'xaxisvalues',xi);
-    title(cond_names{i});
-    if i==1; ylabel ('microsaccades'); xlabel('time in fixation (ms)'); end
+    title(xlabs{i});
+    if i==1; ylabel ('microsaccades'); xlabel('time during fixation period (ms)'); end
     set(gca,'XTick',0:50:100,'XTickLabel',0:700:1400)
     if doPerm
         [~,p]=permutationOLS( -diff(microDens(:,:,i,1:2),[],4), [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
@@ -141,7 +142,7 @@ for i = 1:4
     
     subplot(4,4,4+i);
     errorBarPlot(sq(nanmean(meanSpeedCond(:,:,i,1:n,:),5)),'area',1, 'doStats', 0);
-    if i==1; ylabel('drift speed');xlabel('time in fixation (ms)'); end
+    if i==1; ylabel('drift speed');xlabel('time during fixation period (ms)'); end
     set(gca,'XTick',0:700:1400,'YTick',0:.1:1);
     if doPerm
         [~,p]=permutationOLS( -diff(nanmean(meanSpeedCond(:,:,i,1:2,:),5),[],4), [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
@@ -195,7 +196,7 @@ for i = 1:2
     y = movmean(sq(-diff(microDens(:,:,i*2-1:i*2,1:n),[],3)),s,2);
     errorBarPlot(y,'area',1, 'doStats', 0);%,'xaxisvalues',xi);
     title([motNames{i} ' effect']);
-    if i==1; ylabel ('microsaccades'); xlabel('time in fixation (ms)'); end
+    if i==1; ylabel ('microsaccades'); xlabel('time during fixation period (ms)'); end
     set(gca,'XTick',0:50:100,'XTickLabel',0:700:1400)
     yline(0,':k');
     if doPerm
@@ -210,7 +211,7 @@ for i = 1:2
     subplot(4,2,2+i); 
     y = movmean(sq(-diff(nanmean(meanSpeedCond(:,:,i*2-1:i*2,1:n,:),5),[],3)),s,2);
     errorBarPlot(y,'area',1, 'doStats', 0);%,'xaxisvalues',xi);
-    if i==1; ylabel('drift speed');xlabel('time in fixation (ms)'); end
+    if i==1; ylabel('drift speed');xlabel('time during fixation period (ms)'); end
     yline(0,':k');
     xlim([0 1400]);
     set(gca,'YTick',-1:.1:1,'XTick',0:700:1400);
@@ -271,15 +272,18 @@ figure();
 cols = get(gca,'ColorOrder'); cols = repmat(cols(1:3,:), 10,1);
 condCols = [1 2; 3 4];
 xvals = [1:4]' + [0 .02 .05];
+xlabs = {'Perform','Random','+10p','0p'};
 for j = 1:2
     set(gca,'ColorOrder',cols);
     errorBarPlot(sq(nanmean(microDens(:,:,condCols(j,:),1:2),2)),'xaxisvalues',xvals(j*2-1:j*2,1:2),'plotargs',{'LineWidth',2}, 'doStats', 0);
     hold on;
     errorBarPlot(sq(nanmean(microDens(:,:,condCols(j,:),3),2)),'xaxisvalues',xvals(j*2-1:j*2,3),'plotargs',{'LineWidth',2}, 'doStats', 0);
 end
-set(gca,'XTick',1:4, 'XTickLabel',cond_names);
+ylim([0 2]);
+set(gca,'XTick',1:4, 'XTickLabel',xlabs,'YTick',0:.5:2);
 xlim([.5 4.5])
 ylabel('# microsaccades')
+xlabel('condition')
 legend(on_off, 'Location','Best')
 box off
 
@@ -300,8 +304,9 @@ for j = 1:2
     hold on;
     errorBarPlot(sq(meanDrift(:,:,j,3)),'xaxisvalues',xvals(j*2-1:j*2,3),'plotargs',{'LineWidth',2}, 'doStats', 0);
 end
-set(gca,'XTick',1:4, 'XTickLabel',cond_names);
+set(gca,'XTick',1:4, 'XTickLabel',xlabs);
 xlim([.5 4.5])
 ylabel('mean ocular drift speed (deg/s)')
+xlabel('condition')
 legend(on_off,'Location','Best')
 box off

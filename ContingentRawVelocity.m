@@ -1,7 +1,7 @@
 % ContingentRawVelocity
 
 clear; %close all;
-load('ContingentAnalysis.mat', 'doHC', 'cg','on_off','xlabs','bad_sub','bad_sub2','nConds','tt','nPP','rtCutoffs');
+load('ContingentAnalysis.mat', 'doHC', 'cg','on_off','xlabs','bad_sub','bad_sub2','nConds','tt','nPP','rtCutoffs','dpp');
 %% velocities
 % snip raw saccade trajectories
 clear S
@@ -89,13 +89,13 @@ bad_sub(:,1:2) = repmat(any(bad_sub(:,1:2),2),[1 2]);
 Sf(repmat(permute(ok_1==0,[2,5,1,3,4]), 1, 50)) = complex(NaN,NaN);
 Sf(repmat(permute(bad_sub==1, [3,4,1,2,5]), [4,size(Sf,2),1,1,120])) = complex(NaN,NaN);
 
-
+Sf = Sf * dpp; % convert from pixels -> degrees
 
 %% get velocities from raw traces
 
 stretchPoints = 50;
 
-raw_vels = real(diff(Sf,[],2)); % horizontal only
+raw_vels = real(diff(Sf,[],2)) .* 1000; % horizontal only - convert from deg/ms to deg/sec
 raw_vels = raw_vels .* repmat(sign(raw_vels(:,10,:,:,:,:)),[1 size(raw_vels,2) 1 1 1 1]); % flip leftwards
 
 smooth_vels = movmean(raw_vels, 3, 2);

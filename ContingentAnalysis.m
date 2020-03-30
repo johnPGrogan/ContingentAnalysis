@@ -43,7 +43,7 @@ for i=1:nPP % for each dataset
   for j=1:nConds
     if ~isempty(result{i,j})
     inf1(i,j).amp = nancat( 1, result{i,j}.sAmpl  ).*dpp; % ok, bad idea to use inf as a variable, but...
-    inf1(i,j).vel = nancat( 1, result{i,j}.sSpd   ).*dpp;
+    inf1(i,j).vel = nancat( 1, result{i,j}.sSpd   ).*dpp * 1000; % from ms to sec
     inf1(i,j).rt  = nancat( 1, result{i,j}.sRT    );
     inf1(i,j).ep  = nancat( 1, result{i,j}.sEndpt ).*dpp;
     inf1(i,j).bln = nancat( 1, result{i,j}.sBlink );
@@ -105,7 +105,7 @@ ok2 = info.amp >= MIN_AMP & info.amp <= MAX_AMP & info.rt >= rtCutoffs(1) & info
 ok(:,:,:,3) = ok2(:,:,:,3);
 
 if EXCLUDE_BAD_VEL
-  ok = ok & info.vel >= (2.5.*dpp)   & info.vel<= (80.*dpp);
+  ok = ok & info.vel >= (2.5*dpp*1000) & info.vel <= (80*dpp*1000);
 end
 
 % make velocity of bad saccades nan
@@ -346,7 +346,7 @@ end
 
 nDVs = 4; % how many DVs to plot
 
-ylabs = {'Peak Velocity (deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
+ylabs = {'Peak Velocity Residuals(deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
     'Endpoint Varibility (deg)','Peak Velocity (deg/s)'};
 xlabs = {'Perform','Random','+10p','0p'};
 xTitle = {'Contingent                    Reward  ', '   Motivation                 Expectation '};
@@ -433,7 +433,7 @@ for i = 1:1
     yline(0,':k');
     
 %     if anTab4{i}.pValue(end) < .05
-        text(0.5, 0.9, repmat('*',1, sum(anTab4{i}.pValue(end) < [.05 .01 .001])),'Units','Normalized','FontSize',20);
+%         text(0.5, 0.9, repmat('*',1, sum(anTab4{i}.pValue(end) < [.05 .01 .001])),'Units','Normalized','FontSize',20);
 %     end
     
 end
@@ -443,14 +443,16 @@ end
 %% plot with individual points
 
 plotargs = {'LineWidth',2.5,'Marker','x','MarkerSize',4};
-xTitle = {'Contingent              Reward', '    Motivation           Expectation'};
+xTitle = {'Contingent                    Reward  ', '   Motivation                 Expectation '};
+xTitle2 = {'Contingent         Reward  ', '   Motivation      Expectation '};
 cols = get(gca,'ColorOrder'); %cols = cols([3 1 2], :);
 xvals = [1:4]' + [-.15 0 .15];
-figure();
+xlabs = {'Perform','Random','+10p','0p'};
+figure(2);clf
 errbars = 0; %0= none, 1=SEM, 2=SD
 clear h;
 for i = 1:nDVs
-    subplot(ceil(nDVs/2),2,i)
+    if i==1; subplot(2,2,i); else subplot(2,3,i+2);end
     if doHC
         data = sq(nanmean(tHC.(dv{i})));
     else
@@ -496,12 +498,83 @@ for i = 1:nDVs
     set(gca,'xtick',1:4,'xticklabel',xlabs);
     xlim([.75 4.25])
     box off
-    xlabel(xTitle);
+    if i==3; xlabel(xTitle2); end
+    if i==1; xlabel(xTitle);legend(h(:,1), on_off, 'location', [0.1893 0.8160 0.1304 0.1119]); end
 end
-legend(h(:,1), on_off, 'location','Best')
+% legend(h(:,1), on_off, 'location','Best')
 
 
+ylabs = {'Peak Velocity (deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
+    'Endpoint Varibility (deg)','Peak Velocity (deg/s)'};
+xlabs = {'Contingent','Guaranteed'};
+xTitle = {'Motivational effects'};
+plotargs = {'LineWidth',2.5};
+condCols = [1 2; 3 4];
+cols = get(gca,'ColorOrder'); %cols = cols([3 1 2], :);
+xvals = [1:2]' + [-.1 0 .1];
 
+figure(2);
+for i = 1:1
+    subplot(2,2,2);
+    if doHC % get variable
+        data = sq(-diff(reshape(nanmean(tHC.(dv{i})),nPP,2,2,3),[],2));
+    else
+        data = sq(-diff(reshape(nanmean(t.(dv{i})),nPP,2,2,2),[],2));
+    end
+    
+    if ~errbars
+    %%%    plot means - no error bars
+        hold on;
+        for j = 1
+            h(:,j) = plot(xvals(j*2-1:j*2 ,:), sq(nanmean(data(:,j*2-1:j*2,:))),'-','LineWidth',2.5);
+            for k=1:(2+doHC)
+                h(k,j).Color = cols(k,:);
+            end
+        end
+        plot(xvals, sq(nanmean(data)),'k.','MarkerSize',12);
+    else
+    %%%have error bars still
+        for j = 1
+            set(gca,'ColorOrder',cols);
+            if doHC
+                h(3,1) = errorBarPlot( data(:,:,3),'standardError',errbars, 'plotargs',plotargs, 'doStats', 0);
+                hold on;
+            end
+            h(1:2,1) = errorBarPlot( data(:,:,1:2),'standardError',errbars,'plotargs',plotargs, 'doStats', 0);
+            for k = 1:2+doHC
+                h(k).Color = cols(k,:);
+                h(k).MarkerEdgeColor = [0 0 0];
+            end
+        end
+    end
+    
+    for k=1:(2+doHC)
+        for j=1:2
+            h1 = scatter(repmat(xvals(j,k),1,nPP) + rand(1,nPP)*.05-.025,data(:,j,k)', 36, cols(k,:));
+            h1.Marker = 'x';
+            alpha(h1, 0.5);
+        end
+%         h1(k,:) = plot(repmat(xvals(:,k),1,nPP) + rand(4,nPP)*.05-.025,data(:,:,k)','x','Color',[0.1 0.1 0.1]);%cols(k,:));
+%         hold on;
+    end
+
+    
+    
+    ylabel(['\Delta ' ylabs{i}])
+%     yl = ([-1 1] .* repmat(max(abs(ylim)),1,2));
+%     ylim(yl);
+    set(gca,'xtick',1:2,'xticklabel',xlabs);%,'YTick', linspace(yl(1), yl(2), 3));
+    xlim([.75 2.25]);
+    box off
+    xlabel(xTitle);
+    yline(0,':k');
+    
+%     if anTab4{i}.pValue(end) < .05
+%         text(0.5, 0.9, repmat('*',1, sum(anTab4{i}.pValue(end) < [.05 .01 .001])),'Units','Normalized','FontSize',20);
+%     end
+    
+end
+% legend(h(1:3), on_off, 'location','Best')
 
 
 
@@ -525,8 +598,8 @@ for i = 1:3
     [~, ~, ~, ~, ~, h] = scatterRegress( x(:,1), x(:,2)  , plotargs{:});
     hold on; yline(0, 'k:'); xline(0,':k');
     xlabel(['Contingent Effect: ' on_off{i}]);  ylabel(['Guaranteed Effect: ' on_off{i}]);
-    set(gca,'XTick',-.1:.1:.1,'YTick',-.1:.1:.1);
-    axis([-.15 .15 -.15 .15])
+    set(gca,'XTick',-100:100:100,'YTick',-100:100:100);
+    axis([-150 150 -150 150])
     h(1).MarkerEdgeColor = cols(i,:);
     h(1).Marker = 'x';
     axis('square')
@@ -538,8 +611,8 @@ subplot(2,3,4)
 x = sq(dmvr(:,1,1:2)); x(all(isnan(x),2),:) = [];
 [~, ~, ~, ~, ~, h] = scatterRegress( x(:,1), x(:,2)  , plotargs{:});hold on; yline(0, 'k:'); xline(0,':k');
 xlabel 'Contingent Effect PD ON'; ylabel 'Contingent Effect PD OFF';
-set(gca,'XTick',-.1:.1:.1,'YTick',-.1:.1:.1);
-axis([-.15 .15 -.15 .15])
+set(gca,'XTick',-100:100:100,'YTick',-100:100:100);
+axis([-150 150 -150 150])
 h(1).MarkerEdgeColor = 'k';
 axis('square')
 
@@ -548,8 +621,8 @@ x = sq(dmvr(:,2,1:2)); x(all(isnan(x),2),:) = [];
 [~, ~, ~, ~, ~, h] = scatterRegress( x(:,1), x(:,2)  , plotargs{:});hold on; yline(0, 'k:'); xline(0,':k');
 hold on; yline(0, 'k:'); xline(0,':k');
 xlabel 'Guaranteed Effect PD ON'; ylabel 'Guaranteed Effect PD OFF';
-set(gca,'XTick',-.1:.1:.1,'YTick',-.1:.1:.1);
-axis([-.15 .15 -.15 .15])
+set(gca,'XTick',-100:100:100,'YTick',-100:100:100);
+axis([-150 150 -150 150])
 h(1).MarkerEdgeColor = 'k';
 axis('square')
 
@@ -558,8 +631,8 @@ x = [dmvr(:,1,1)-dmvr(:,1,2), dmvr(:,2,1)-dmvr(:,2,2)]; x(all(isnan(x),2),:) = [
 [~, ~, ~, ~, ~, h] = scatterRegress( x(:,1), x(:,2)  , plotargs{:});hold on; yline(0, 'k:'); xline(0,':k');
 hold on; yline(0, 'k:'); xline(0,':k');
 xlabel 'Contingent Effect: PD ON - OFF'; ylabel 'Guaranteed Effect: PD ON - OFF';
-set(gca,'XTick',-.1:.1:.1,'YTick',-.1:.1:.1);
-axis([-.15 .15 -.15 .15])
+set(gca,'XTick',-100:100:100,'YTick',-100:100:100);
+axis([-150 150 -150 150])
 h(1).MarkerEdgeColor = 'k';
 axis('square')
 makeSubplotScalesEqual(2,3);
