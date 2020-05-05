@@ -146,6 +146,7 @@ roi = 50:70;
 P_roi = reshape(nanmean(p(:,roi,:,1:2),2),[size(p,1), 2,2,2]); 
 
 pupAnova = rmanova( P_roi, {'sub','mot','cont','drg'},'categorical', [2 3 4],'DummyVarCoding','effects')
+etaSqP = pupAnova.FStat.*pupAnova.DF1) ./ (pupAnova.FStat.*pupAnova.DF1 + pupAnova.DF2; % partial eta sq
 
 % then via permutation t-test
 py0  = reshape( p(:,:,:,1:2), size(p,1),size(p,2), 2,2,2 );

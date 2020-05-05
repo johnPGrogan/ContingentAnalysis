@@ -194,6 +194,8 @@ for i=1:length(fn)
   T.(fn{i}) = t.(fn{i})(:);
 end
 
+etaSqP = @(x) (x.FStat.*x.DF1) ./ (x.FStat.*x.DF1 + x.DF2); % function for partial eta squared
+
 dv = {'vr','amp','rt', 'epv', 'vel'};
 for i = 1:length(dv)
 
@@ -206,6 +208,7 @@ for i = 1:length(dv)
     % Statistical method 2:
     % repeated measures ANOVA on per-condition means:
     anTab{i} = rmanova( reshape(nanmean(t.(dv{i})),nPP,2,2,2), {'s','mot','cont','drg'}, 'categorical', [2 3 4] ,'DummyVarCoding','effects');
+    anTab{i}.etaSqP = etaSqP(anTab{i});
 %     pvalues(1:8,i) = anTab{i}.pValue';
 %     pvalues(9,i) = M{i}.Coefficients.pValue(8);
     
@@ -224,6 +227,8 @@ for i = 1:length(dv)
     
     % repeated measures ANOVA on per-condition means:
     anTab2{i,1} = rmanova(reshape(nanmean(t.(dv{i})(:,:,1:2,:)),nPP,2,2), {'s','cont','drg'}, 'categorical', [2 3], 'DummyVarCoding','effects' );
+    anTab2{i,1}.etaSqP = etaSqP(anTab2{i,1});
+
     pvalues2(1:4,i,1) = anTab2{i,1}.pValue';
 %     pvalues2(5,i,1) = M2{i,1}.Coefficients.pValue(4);
     
@@ -233,6 +238,8 @@ for i = 1:length(dv)
     
     % repeated measures ANOVA on per-condition means:
     anTab2{i,2} = rmanova(reshape(nanmean(t.(dv{i})(:,:,3:4,:)),nPP,2,2), {'s','mot','drg'}, 'categorical', [2 3] ,'DummyVarCoding','effects');
+    anTab2{i,2}.etaSqP = etaSqP(anTab2{i,2});
+
     pvalues2(1:4,i,2) = anTab2{i,2}.pValue';
 %     pvalues2(5,i,2) = M2{i,2}.Coefficients.pValue(4);
     
@@ -252,6 +259,7 @@ for i = 1:length(dv)
     
     % repeated measures ANOVA on per-condition means:
     anTab3{i,1} = rmanova(reshape(nanmean(t.(dv{i})(:,:,:,1)),nPP,2,2), {'s', 'mot', 'cont'}, 'categorical', [2 3] ,'DummyVarCoding','effects');
+    anTab3{i,1}.etaSqP = etaSqP(anTab2{i,1});
 %     pvalues3(1:4,i,1) = anTab3{i,1}.pValue';
 %     pvalues3(5,i,1) = M3{i,1}.Coefficients.pValue(4);
     
@@ -261,6 +269,7 @@ for i = 1:length(dv)
     
     % repeated measures ANOVA on per-condition means:
     anTab3{i,2} = rmanova(reshape(nanmean(t.(dv{i})(:,:,:,2)),nPP,2,2), {'s', 'mot','cont'}, 'categorical', [2 3] ,'DummyVarCoding','effects');
+    anTab3{i,2}.etaSqP = etaSqP(anTab3{i,2});
 %     pvalues3(1:4,i,2) = anTab3{i,2}.pValue';
 %     pvalues3(5,i,2) = M3{i,2}.Coefficients.pValue(4);
     
@@ -311,6 +320,12 @@ if doHC
         % just HC
         anTabHC{i,4} = rmanova( reshape(nanmean(tHC.(dv{i})(:,:,:,[3])),nPP,2,2), {'s','mot', 'cont'}, 'categorical', [2 3], 'DummyVarCoding','effects');
 %         pvaluesHC(1:4,i,4) = anTabHC{i,4}.pValue';
+
+        % get etasq
+        for j=1:4
+            anTabHC{i,j}.etaSqP = etaSqP(anTabHC{i,j});
+        end
+
     end
 end
 %% two-way anova on motiv effects
@@ -336,6 +351,10 @@ for i = 1:length(dv)
     % HC only
     anTab4HC{i,4} = rmanova(x(:,:,[3]), {'s','cont'}, 'categorical', [2], 'DummyVarCoding','effects' );
     
+    % get etasq
+    for j=1:4
+        anTab4HC{i,j}.etaSqP = etaSqP(anTab4HC{i,j});
+    end
 end
 % reshape(nanmean(tHC.(dv{i})),nPP,2,2,3)
 
@@ -346,7 +365,7 @@ end
 
 nDVs = 4; % how many DVs to plot
 
-ylabs = {'Peak Velocity Residuals(deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
+ylabs = {'Peak Velocity Residuals (deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
     'Endpoint Varibility (deg)','Peak Velocity (deg/s)'};
 xlabs = {'Perform','Random','+10p','0p'};
 xTitle = {'Contingent                    Reward  ', '   Motivation                 Expectation '};
@@ -393,7 +412,7 @@ end
 
 nDVs = 4; % how many DVs to plot
 
-ylabs = {'Peak Velocity (deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
+ylabs = {'Peak Velocity Residuals (deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
     'Endpoint Varibility (deg)','Peak Velocity (deg/s)'};
 xlabs = {'Contingent','Guaranteed'};
 xTitle = {'Motivational effects'};
