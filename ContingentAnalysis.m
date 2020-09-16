@@ -356,326 +356,146 @@ for i = 1:length(dv)
         anTab4HC{i,j}.etaSqP = etaSqP(anTab4HC{i,j});
     end
 end
-% reshape(nanmean(tHC.(dv{i})),nPP,2,2,3)
 
-% now do HC ones too
-
+% t-tests on epv - posthoc pairwise
+x = reshape(nanmean(tHC.epv),nPP,2,2,3);
+[~,epvarP(1)] = ttest(sq(x(:,1,1,3)), sq(x(:,2,1,3))); 
+[~,epvarP(2)] = ttest(sq(x(:,1,2,3)), sq(x(:,2,2,3)));
 
 %% %%%%%%% plot everything
 
-nDVs = 4; % how many DVs to plot
+nDVs = 5; % how many DVs to plot
 
 ylabs = {'Peak Velocity Residuals (deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
     'Endpoint Varibility (deg)','Peak Velocity (deg/s)'};
 xlabs = {'Perform','Random','+10p','0p'};
-xTitle = {'Contingent                    Reward  ', '   Motivation                 Expectation '};
-xTitle2 = {'Contingent         Reward  ', '   Motivation      Expectation '};
-plotargs = {'LineWidth',2.5};
-condCols = [1 2; 3 4];
-cols = get(gca,'ColorOrder'); %cols = cols([3 1 2], :);
-xvals = [1:4]' + [-.1 0 .1];
-
-figure(1);clf;
-for i = 1:nDVs
-    if i==1; subplot(2,2,i); else subplot(2,3,i+2);end
-    if doHC % get variable
-        data = sq(nanmean(tHC.(dv{i})));
-    else
-        data = sq(nanmean(t.(dv{i})));
-    end
-    
-    % plot each pair of conditions
-    for j = 1:2
-        set(gca,'ColorOrder',cols); % keep colour order
-        if doHC
-            h(3) = errorBarPlot( data(:,condCols(j,:),3), 'xaxisvalues', xvals(j*2-1:j*2,3), 'plotargs',plotargs, 'doStats', 0);
-            hold on;
-        end
-        h(1:2) = errorBarPlot( data(:,condCols(j,:),1:2), 'xaxisvalues', xvals(j*2-1:j*2,1:2), 'plotargs',plotargs, 'doStats', 0);
-        for k = 1:2+doHC
-            h(k).Color = cols(k,:);
-        end
-    end
-    ylabel(ylabs{i})
-%     if i==1; yl = max(abs(ylim)); ylim([-yl, yl]); end
-    set(gca,'xtick',1:4,'xticklabel',xlabs);
-    if i>1; set(gca,'YTick', linspace(min(yticks), max(yticks), 3)); end
-    xlim([.75 4.25])
-    box off
-    if i==3; xlabel(xTitle2); end
-    if i==1; xlabel(xTitle);legend(h, on_off, 'location', [0.1893 0.8160 0.1304 0.1119]); end
-    
-end
-
-
-% plot motiv effects
-
-nDVs = 4; % how many DVs to plot
-
-ylabs = {'Peak Velocity Residuals (deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
-    'Endpoint Varibility (deg)','Peak Velocity (deg/s)'};
-xlabs = {'Contingent','Guaranteed'};
-xTitle = {'Motivational effects'};
-plotargs = {'LineWidth',2.5};
-condCols = [1 2; 3 4];
-cols = get(gca,'ColorOrder'); %cols = cols([3 1 2], :);
-xvals = [1:2]' + [-.1 0 .1];
-
-figure(1);
-for i = 1:1
-    subplot(2,2,2);
-    if doHC % get variable
-        data = sq(-diff(reshape(nanmean(tHC.(dv{i})),nPP,2,2,3),[],2));
-    else
-        data = sq(-diff(reshape(nanmean(t.(dv{i})),nPP,2,2,2),[],2));
-    end
-    
-    % plot each pair of conditions
-    for j = 1:2
-        set(gca,'ColorOrder',cols); % keep colour order
-        if doHC
-            h(3) = errorBarPlot( data(:,:,3), 'type','line','plotargs',plotargs, 'doStats', 0);
-            hold on;
-        end
-        h(1:2) = errorBarPlot( data(:,:,1:2), 'type','line','plotargs',plotargs, 'doStats', 0);
-        for k = 1:2+doHC
-            h(k).Color = cols(k,:);
-        end
-    end
-    ylabel(['\Delta ' ylabs{i}])
-    yl = ([-1 1] .* repmat(max(abs(ylim)),1,2));
-%     ylim(yl);
-    set(gca,'xtick',1:2,'xticklabel',xlabs);%,'YTick', linspace(yl(1), yl(2), 3));
-    xlim([.75 2.25]);
-    box off
-    xlabel(xTitle);
-    yline(0,':k');
-    
-%     if anTab4{i}.pValue(end) < .05
-%         text(0.5, 0.9, repmat('*',1, sum(anTab4{i}.pValue(end) < [.05 .01 .001])),'Units','Normalized','FontSize',20);
+xTitle = {'Contingent                                                    Reward  ', 
+    '   Motivation                                                  Expectation '};
+% xTitle2 = {'Contingent                          Reward  ',
+% %     '   Motivation               Expectation '};
+% plotargs = {'LineWidth',2.5};
+% condCols = [1 2; 3 4];
+% cols = get(gca,'ColorOrder'); %cols = cols([3 1 2], :);
+% xvals = [1:4]' + [-.1 0 .1];
+% 
+% f = figure(1);
+% f.WindowState = 'maximized';
+% clf;
+% for i = 1
+%     figure();
+% %     if i==1; subplot(3,2,i); else, subplot(3,2,i+1);end
+%     if doHC % get variable
+%         data = sq(nanmean(tHC.(dv{i})));
+%     else
+%         data = sq(nanmean(t.(dv{i})));
 %     end
-    
-end
-% legend(h(1:3), on_off, 'location','Best')
-
-
-%% plot with individual points
-
-plotargs = {'LineWidth',2.5,'Marker','x','MarkerSize',4};
-xTitle = {'Contingent                    Reward  ', '   Motivation                 Expectation '};
-xTitle2 = {'Contingent         Reward  ', '   Motivation      Expectation '};
-cols = get(gca,'ColorOrder'); %cols = cols([3 1 2], :);
-xvals = [1:4]' + [-.15 0 .15];
-xlabs = {'Perform','Random','+10p','0p'};
-figure(2);clf
-errbars = 0; %0= none, 1=SEM, 2=SD
-clear h;
-for i = 1:nDVs
-    if i==1; subplot(2,2,i); else subplot(2,3,i+2);end
-    if doHC
-        data = sq(nanmean(tHC.(dv{i})));
-    else
-        data = sq(nanmean(t.(dv{i})));
-    end
-        
-    if ~errbars
-    %%%    plot means - no error bars
-        hold on;
-        for j = 1:2
-            h(:,j) = plot(xvals(j*2-1:j*2 ,:), sq(nanmean(data(:,j*2-1:j*2,:))),'-','LineWidth',2.5);
-            for k=1:(2+doHC)
-                h(k,j).Color = cols(k,:);
-            end
-        end
-        plot(xvals, sq(nanmean(data)),'k.','MarkerSize',12);
-    else
-    %%%have error bars still
-        for j = 1:2
-            set(gca,'ColorOrder',cols);
-            if doHC
-                h(3,1) = errorBarPlot( data(:,condCols(j,:),3),'standardError',errbars, 'xaxisvalues', xvals(j*2-1:j*2,3), 'plotargs',plotargs, 'doStats', 0);
-                hold on;
-            end
-            h(1:2,1) = errorBarPlot( data(:,condCols(j,:),1:2),'standardError',errbars, 'xaxisvalues', xvals(j*2-1:j*2,1:2), 'plotargs',plotargs, 'doStats', 0);
-            for k = 1:2+doHC
-                h(k).Color = cols(k,:);
-                h(k).MarkerEdgeColor = [0 0 0];
-            end
-        end
-    end
-    
-    for k=1:(2+doHC)
-        for j=1:4
-            h1 = scatter(repmat(xvals(j,k),1,nPP) + rand(1,nPP)*.05-.025,data(:,j,k)', 36, cols(k,:));
-            h1.Marker = 'x';
-            alpha(h1, 0.5);
-        end
-%         h1(k,:) = plot(repmat(xvals(:,k),1,nPP) + rand(4,nPP)*.05-.025,data(:,:,k)','x','Color',[0.1 0.1 0.1]);%cols(k,:));
-%         hold on;
-    end
-    ylabel(ylabs{i})
-    set(gca,'xtick',1:4,'xticklabel',xlabs);
-    xlim([.75 4.25])
-    box off
-    if i==3; xlabel(xTitle2); end
-    if i==1; xlabel(xTitle);legend(h(:,1), on_off, 'location', [0.1893 0.8160 0.1304 0.1119]); end
-end
-% legend(h(:,1), on_off, 'location','Best')
-
-
-ylabs = {'Peak Velocity (deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
-    'Endpoint Varibility (deg)','Peak Velocity (deg/s)'};
-xlabs = {'Contingent','Guaranteed'};
-xTitle = {'Motivational effects'};
-plotargs = {'LineWidth',2.5};
-condCols = [1 2; 3 4];
-cols = get(gca,'ColorOrder'); %cols = cols([3 1 2], :);
-xvals = [1:2]' + [-.1 0 .1];
-
-figure(2);
-for i = 1:1
-    subplot(2,2,2);
-    if doHC % get variable
-        data = sq(-diff(reshape(nanmean(tHC.(dv{i})),nPP,2,2,3),[],2));
-    else
-        data = sq(-diff(reshape(nanmean(t.(dv{i})),nPP,2,2,2),[],2));
-    end
-    
-    if ~errbars
-    %%%    plot means - no error bars
-        hold on;
-        for j = 1
-            h(:,j) = plot(xvals(j*2-1:j*2 ,:), sq(nanmean(data(:,j*2-1:j*2,:))),'-','LineWidth',2.5);
-            for k=1:(2+doHC)
-                h(k,j).Color = cols(k,:);
-            end
-        end
-        plot(xvals, sq(nanmean(data)),'k.','MarkerSize',12);
-    else
-    %%%have error bars still
-        for j = 1
-            set(gca,'ColorOrder',cols);
-            if doHC
-                h(3,1) = errorBarPlot( data(:,:,3),'standardError',errbars, 'plotargs',plotargs, 'doStats', 0);
-                hold on;
-            end
-            h(1:2,1) = errorBarPlot( data(:,:,1:2),'standardError',errbars,'plotargs',plotargs, 'doStats', 0);
-            for k = 1:2+doHC
-                h(k).Color = cols(k,:);
-                h(k).MarkerEdgeColor = [0 0 0];
-            end
-        end
-    end
-    
-    for k=1:(2+doHC)
-        for j=1:2
-            h1 = scatter(repmat(xvals(j,k),1,nPP) + rand(1,nPP)*.05-.025,data(:,j,k)', 36, cols(k,:));
-            h1.Marker = 'x';
-            alpha(h1, 0.5);
-        end
-%         h1(k,:) = plot(repmat(xvals(:,k),1,nPP) + rand(4,nPP)*.05-.025,data(:,:,k)','x','Color',[0.1 0.1 0.1]);%cols(k,:));
-%         hold on;
-    end
-
-    
-    
-    ylabel(['\Delta ' ylabs{i}])
+%     
+%     % plot each pair of conditions
+%     for j = 1:2
+%         set(gca,'ColorOrder',cols); % keep colour order
+%         if doHC
+%             h(3) = errorBarPlot( data(:,condCols(j,:),3), 'xaxisvalues', xvals(j*2-1:j*2,3), 'plotargs',plotargs, 'doStats', 0);
+%             hold on;
+%         end
+%         h(1:2) = errorBarPlot( data(:,condCols(j,:),1:2), 'xaxisvalues', xvals(j*2-1:j*2,1:2), 'plotargs',plotargs, 'doStats', 0);
+%         for k = 1:2+doHC
+%             h(k).Color = cols(k,:);
+%         end
+%     end
+%     ylabel(ylabs{i})
+% %     if i==1; yl = max(abs(ylim)); ylim([-yl, yl]); end
+%     set(gca,'xtick',1:4,'xticklabel',xlabs);
+%     if i>1; set(gca,'YTick', linspace(min(yticks), max(yticks), 3)); end
+%     xlim([.75 4.25])
+%     box off
+%     if i>3; xlabel(xTitle); end
+%     if i==1; legend(h, on_off, 'location', 'North'); end
+%     
+% end
+% 
+% 
+% % plot motiv effects
+% 
+% % nDVs = 4; % how many DVs to plot
+% 
+% ylabs = {'Peak Velocity Residuals (deg/s)', 'Amplitude (deg) ','Saccadic RT (ms)',...
+%     'Endpoint Varibility (deg)','Peak Velocity (deg/s)'};
+% xlabs = {'Contingent','Guaranteed'};
+% xTitle = {'Motivational effects'};
+% plotargs = {'LineWidth',2.5};
+% condCols = [1 2; 3 4];
+% cols = get(gca,'ColorOrder'); %cols = cols([3 1 2], :);
+% xvals = [1:2]' + [-.1 0 .1];
+% 
+% figure();
+% for i = 1:1
+% %     subplot(3,2,2);
+%     if doHC % get variable
+%         data = sq(-diff(reshape(nanmean(tHC.(dv{i})),nPP,2,2,3),[],2));
+%     else
+%         data = sq(-diff(reshape(nanmean(t.(dv{i})),nPP,2,2,2),[],2));
+%     end
+%     
+%     % plot each pair of conditions
+%     for j = 1:2
+%         set(gca,'ColorOrder',cols); % keep colour order
+%         if doHC
+%             h(3) = errorBarPlot( data(:,:,3), 'type','line','plotargs',plotargs, 'doStats', 0);
+%             hold on;
+%         end
+%         h(1:2) = errorBarPlot( data(:,:,1:2), 'type','line','plotargs',plotargs, 'doStats', 0);
+%         for k = 1:2+doHC
+%             h(k).Color = cols(k,:);
+%         end
+%     end
+%     ylabel(['\Delta ' ylabs{i}])
 %     yl = ([-1 1] .* repmat(max(abs(ylim)),1,2));
-%     ylim(yl);
-    set(gca,'xtick',1:2,'xticklabel',xlabs);%,'YTick', linspace(yl(1), yl(2), 3));
-    xlim([.75 2.25]);
-    box off
-    xlabel(xTitle);
-    yline(0,':k');
-    
-%     if anTab4{i}.pValue(end) < .05
-%         text(0.5, 0.9, repmat('*',1, sum(anTab4{i}.pValue(end) < [.05 .01 .001])),'Units','Normalized','FontSize',20);
-%     end
-    
-end
-% legend(h(1:3), on_off, 'location','Best')
+% %     ylim(yl);
+%     set(gca,'xtick',1:2,'xticklabel',xlabs);%,'YTick', linspace(yl(1), yl(2), 3));
+%     xlim([.75 2.25]);
+%     box off
+%     xlabel(xTitle);
+%     yline(0,':k');
+%     
+% %     if anTab4{i}.pValue(end) < .05
+% %         text(0.5, 0.9, repmat('*',1, sum(anTab4{i}.pValue(end) < [.05 .01 .001])),'Units','Normalized','FontSize',20);
+% %     end
+%     
+% end
+% % legend(h(1:3), on_off, 'location','Best')
+% 
+% 
 
+%% box plot + scatter
+DrawSaccadeFigures(tHC, dv, ylabs, xlabs, cg, 1)
 
-
-
-
+% save for source data
+readme = "Data to create Figure 2. Please download the ContingentAnalysis GitHub repo and Matlib repo (links available in paper), and then run: DrawSaccadeFigures(tHC, dv, ylabs, xlabs, cg);";
+save('Figure2SourceData.mat', 'tHC', 'dv', 'ylabs', 'xlabs', 'cg', 'readme');
 %% Between subject correlations
-figure()
-% run this after the previous section to get vr.
-% calculate motivation effect = difference in mean peak velocity 
+% calculate motivation effect = difference in mean peak velocity
 % mvr = mean vel resid ( sub, mot_level, cont/guar, drug )
-mvr = reshape(nanmean(vr(:,:,:,:)),[],2,2,nConds);
+mvr = reshape(nanmean(vr(:,:,:,:)),[],2,2,3);
 % dmvr = difference in mvr with motivation ( subj, cont/guar, on/off )
-dmvr = sq( diff( mvr, [],2 ) );
+dmvr = sq( -diff( mvr, [],2 ) );
+    
+DrawCorrelFigures(dmvr, on_off)
 
-plotargs = {'pearson',0,'plot_ci',0,'text',2, 'plotline', 2, 'showzero',0}; % use spearman correlation?
-
-set(0,'DefaultAxesColorOrder',[0 0 0; 0 0 0]);
-for i = 1:3
-    subplot(2,3,i)
-    x = dmvr(:,1:2,i); x(all(isnan(x),2),:) = [];
-    [~, ~, ~, ~, ~, h] = scatterRegress( x(:,1), x(:,2)  , plotargs{:});
-    hold on; yline(0, 'k:'); xline(0,':k');
-    xlabel(['Contingent Effect: ' on_off{i}]);  ylabel(['Guaranteed Effect: ' on_off{i}]);
-    set(gca,'XTick',-100:100:100,'YTick',-100:100:100);
-    axis([-150 150 -150 150])
-    h(1).MarkerEdgeColor = cols(i,:);
-    h(1).Marker = 'x';
-    axis('square')
-end
-
-
-% now plot differences 
-subplot(2,3,4)
-x = sq(dmvr(:,1,1:2)); x(all(isnan(x),2),:) = [];
-[~, ~, ~, ~, ~, h] = scatterRegress( x(:,1), x(:,2)  , plotargs{:});hold on; yline(0, 'k:'); xline(0,':k');
-xlabel 'Contingent Effect PD ON'; ylabel 'Contingent Effect PD OFF';
-set(gca,'XTick',-100:100:100,'YTick',-100:100:100);
-axis([-150 150 -150 150])
-h(1).MarkerEdgeColor = 'k';
-axis('square')
-
-subplot(2,3,5)
-x = sq(dmvr(:,2,1:2)); x(all(isnan(x),2),:) = [];
-[~, ~, ~, ~, ~, h] = scatterRegress( x(:,1), x(:,2)  , plotargs{:});hold on; yline(0, 'k:'); xline(0,':k');
-hold on; yline(0, 'k:'); xline(0,':k');
-xlabel 'Guaranteed Effect PD ON'; ylabel 'Guaranteed Effect PD OFF';
-set(gca,'XTick',-100:100:100,'YTick',-100:100:100);
-axis([-150 150 -150 150])
-h(1).MarkerEdgeColor = 'k';
-axis('square')
-
-subplot(2,3,6)
-x = [dmvr(:,1,1)-dmvr(:,1,2), dmvr(:,2,1)-dmvr(:,2,2)]; x(all(isnan(x),2),:) = [];
-[~, ~, ~, ~, ~, h] = scatterRegress( x(:,1), x(:,2)  , plotargs{:});hold on; yline(0, 'k:'); xline(0,':k');
-hold on; yline(0, 'k:'); xline(0,':k');
-xlabel 'Contingent Effect: PD ON - OFF'; ylabel 'Guaranteed Effect: PD ON - OFF';
-set(gca,'XTick',-100:100:100,'YTick',-100:100:100);
-axis([-150 150 -150 150])
-h(1).MarkerEdgeColor = 'k';
-axis('square')
-makeSubplotScalesEqual(2,3);
-
-
-set(0,'DefaultAxesColorOrder', 'factory'); % restore
-
-
+% save source
+readme = "Data to create Figure 5. Please download the ContingentAnalysis GitHub repo and Matlib repo (links available in paper), and then run: DrawCorrelFigures(dmvr, on_off);";
+save('Figure5SourceData.mat', 'dmvr', 'on_off','readme');
   
 %% save
-save('ContingentAnalysis.mat','inf1','infg','info','t','tt','rw','dmvr','vr','doHC',...
-    'nConds','on_off','nTrAll','cond_names','dpp','nPD','bad_sub', 'cg',...
-    'xlabs', 'ok_g','bad_sub2','nPP','anTab','anTabHC','anTab2','anTab3','nConds',...
-    'tHC','dv','rtCutoffs','anTab4','anTab4HC');
-
+save('ContingentAnalysis.mat');
 
 %% extra analyses
 % 
-ContingentRawVelocity
+% ContingentRawVelocity
 ContingentPupilCue
 ContingentCovarCorrel
 ContingentVelocity
-ContingentFixation
+% ContingentFixation
 
-ContingentDemographics
-ContingentUPDRS
-ContingentDrugs
+% ContingentDemographics
+% ContingentUPDRS
+% ContingentDrugs

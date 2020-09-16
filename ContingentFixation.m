@@ -121,7 +121,7 @@ end
     
 
 %% plot
-n=2;%2=PD ON vs OFF, 3=HC too
+n=3;%2=PD ON vs OFF, 3=HC too
 figure();
 doPerm = 1;
 useClust = 1;
@@ -156,7 +156,7 @@ for i = 1:4
     if i==1; ylabel 'early log power'; xlabel 'frequency (Hz)'; end
 %     set(gca,'XTick',50:100:250)
     if doPerm
-        [~,p]=permutationOLS( -diff(nanmean(log(fft1(:,plotfreq,i,1:n,:)),5),[],4), [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
+        [~,p]=permutationOLS( -diff(nanmean(log(fft1(:,plotfreq,i,1:2,:)),5),[],4), [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
         hold on;
         pbar(p);
     end
@@ -167,7 +167,7 @@ for i = 1:4
     if i==1; ylabel 'late log power'; xlabel 'frequency (Hz)'; end
 %     set(gca,'XTick',50:100:250)
     if doPerm
-        [~,p]=permutationOLS( -diff(nanmean(log(fft2(:,plotfreq,i,1:n,:)),5),[],4), [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
+        [~,p]=permutationOLS( -diff(nanmean(log(fft2(:,plotfreq,i,1:2,:)),5),[],4), [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
         hold on;
         pbar(p);
     end
@@ -184,7 +184,7 @@ legend(flipud(h),[on_off(1:n) ],'Location','Best');
 
 s = 10; % movmean window size
 s2 = 10; % window size for fft
-n=2;
+n=3;
 figure();
 doPerm = 1;
 useClust = 1;
@@ -202,7 +202,7 @@ for i = 1:2
     if doPerm
         y1 = diff(y,[],3);
         x = ones(nPP,1);
-        [~,p]=permutationOLS( y1, x,[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
+        [~,p]=permutationOLS( y1(:,:,1), x,[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
         hold on;
         pbar(p, 'yVal', min(ylim));
     end
@@ -218,7 +218,7 @@ for i = 1:2
     if doPerm
         y1 = diff(y,[],3);
         x = ones(nPP,1);
-        [~,p]=permutationOLS( y1, x,[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
+        [~,p]=permutationOLS( y1(:,:,1), x,[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
         hold on;
         pbar(p, 'yVal', min(ylim));
     end
@@ -232,7 +232,7 @@ for i = 1:2
     if doPerm
         y1 = diff(y,[],3);
         x = ones(nPP,1);
-        [~,p]=permutationOLS( y1, x,[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
+        [~,p]=permutationOLS( y1(:,:,1), x,[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
         hold on;
         pbar(p, 'yVal', min(ylim));
     end
@@ -245,7 +245,7 @@ for i = 1:2
     if doPerm
         y1 = diff(y,[],3);
         x = ones(nPP,1);
-        [~,p]=permutationOLS( y1, x,[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
+        [~,p]=permutationOLS( y1(:,:,1), x,[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
         hold on;
         pbar(p, 'yVal', min(ylim));
     end
@@ -260,7 +260,7 @@ h = findobj(gca,'Type','Line');
 legend(flipud(h),on_off(1:n),'Location', [0.7772 0.2584 0.1268 0.0726]);
 
 %% mean microsaccade density across 1400ms
-dens = permute(reshape(microDens(:,:,:,1:3),[nPP,100,2,2,3]),[1,3,4,5,2]);
+dens = permute(reshape(microDens(:,:,:,1:n),[nPP,100,2,2,3]),[1,3,4,5,2]);
 
 meanDens = nanmean(dens, 5); % mean across time
 

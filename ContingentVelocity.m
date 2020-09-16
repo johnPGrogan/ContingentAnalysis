@@ -56,81 +56,6 @@ dmvAf = sq(-diff(mvAf,[],3)); % rew effects
 
 
 
-% %% plot each cond
-% n=2;
-% figure();
-% for i = 1:2
-%     for j = 1:2
-%         subplot(2,2,(i-1)*2+j);
-%         errorBarPlot(sq(mvAf(:,:,i,j,:)),'area',1);
-%         xlabel('timepoint in saccade');
-%         ylabel('velocity')
-%         title(xlabs{ (i-1)*2+j });
-%     end
-% end
-
-% %% normalise amplitude
-% 
-% saccAmpl = (Af(:,end,:,:,:));
-% saccAmpl = repmat(reshape(permute(saccAmpl,[3,2,1,4,5]), [nPP,1,2,2,3,120]),[1,49]);
-% 
-% % normAf = Af ./ saccAmpl;
-% 
-% % vAfNorm = permute(real(diff(normAf,[],2)), [3,2,1,4,5]);
-% vAfNorm = vAf ./ abs(real(saccAmpl)); % normalise
-% 
-% % smooth
-% vAfNorm = movmean(vAfNorm, 3, 2); % smooth by 3 time points
-% 
-% vAfNorm = reshape(vAfNorm, nPP,49,2,2,3,120);
-% mvAfNorm = nanmean(vAfNorm,6);
-% dmvAfNorm = sq(-diff(mvAfNorm,[],3));
-% n = 2;
-% figure();
-% doPerm = 1;
-% useClust = 1;
-% nPerms = 5000;
-% for i = 1:2
-%     subplot(2,1,i);
-%     
-%     h = errorBarPlot(sq(dmvAfNorm(:,:,i,1:n)), 'area',1);
-%     hold on; yline(0, 'k:');
-%     box off;
-%     xlabel('timepoint within saccade')
-%     ylabel(cg{i});
-% 
-%     if doPerm
-%         y1 = diff( sq(dmvAfNorm(:,:,i,1:2)),[],3);
-%         x = ones(nPP,1);
-%         [~,p]=permutationOLS( y1, [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
-%         hold on;
-%         pbar(p, 'yVal', min(ylim));
-%     end
-%     
-% end
-% 
-% makeSubplotScalesEqual(2,1);
-% SuperTitle('reward effects on normalised velocity over time');
-% legend(h(:,1), on_off, 'Location', 'Best');
-
-% %% look at indiv vel traces
-% 
-% figure();
-% for i = 1:3
-%     for j = 1:2
-%         subplot(2,3,(j-1)*3+i)
-%         plot(sq(vAf(1,:,1,j,i,:)),'-');
-%         
-%         box off;
-%         title(on_off{i});
-%         
-%         if i==1; ylabel(cg{j});end
-%         if j==2; xlabel('timepoint in saccade'); end
-%     end 
-% end
-% 
-
-
 %% acceleration
 vAf2 = permute(real(diff(Af,[],2)), [3,2,1,4,5]); % horizontal acceleration
 vAf2 = vAf2 .* 1000; % from deg/ms -> deg/sec
@@ -150,147 +75,64 @@ accelSmooth = reshape(accelSmooth, nPP,48,2,2,3,120); % split into conds
 mAccel = nanmean(accelSmooth, 6); % mean across trials
 
 dmAccel = sq(-diff(mAccel,[],3)); % rew effects
-% %% plot each cond
-% n=2;
-% figure();
-% for i = 1:2
-%     for j = 1:2
-%         subplot(2,2,(i-1)*2+j);
-%         errorBarPlot(sq(mAccel(:,:,i,j,:)),'area',1);
-%         xlabel('timepoint in saccade');
-%         ylabel('velocity')
-%         title(xlabs{ (i-1)*2+j });
-%     end
-% end
 
-% %% normalise amplitude
-% 
-% saccAmpl = (Af(:,end,:,:,:));
-% normAf = Af ./ saccAmpl;
-% 
-% vAfNorm = permute(abs(diff(normAf,[],2)), [3,2,1,4,5]);
-% 
-% vAfNorm(repmat(any(abs(vAfNorm)>0.4,2),[1 49 1 1 1])) = NaN; % remove outlying vel due to blinks
-% 
-% vAfNorm = movmean(vAfNorm,3,2); % smooth
-% vAccelNorm = (diff(vAfNorm,[],2));
-% 
-% % smooth
-% vAccelNorm = movmean(vAccelNorm, 5, 2); % smooth by 3 time points
-% 
-% vAccelNorm = reshape(vAccelNorm, nPP,48,2,2,3,120);
-% mvAccelNorm = nanmean(vAccelNorm,6);
-% dmvAccelNorm = sq(-diff(mvAccelNorm,[],3));
-% n = 2;
-% figure();
-% doPerm = 1;
-% useClust = 1;
-% nPerms = 5000;
-% for i = 1:2
-%     subplot(2,1,i);
-%     
-%     h = errorBarPlot(sq(dmvAccelNorm(:,:,i,1:n)), 'area',1);
-%     hold on; yline(0, 'k:');
-%     box off;
-%     xlabel('timepoint within saccade')
-%     ylabel(cg{i});
-% 
-%     if doPerm
-%         y1 = diff( sq(dmvAccelNorm(:,:,i,1:2)),[],3);
-%         x = ones(nPP,1);
-%         [~,p]=permutationOLS( y1, [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
-%         hold on;
-%         pbar(p, 'yVal', min(ylim));
-%     end
-%     
-% end
 
 %% vel & accel on one fig
 
-n = 2;
-figure();
-doPerm = 2; % 2=PD ON and OFF sep vs 0.
-useClust = 1;
-nPerms = 5000;
-c = get(gca,'ColorOrder');
-c = c(n:-1:1,:);
-for i = 1:2
-    subplot(2,2,i*2-1);
-    set(gca,'ColorOrder',c);
-    
-    h = errorBarPlot(sq(dmvAf(:,:,i,n:-1:1)), 'area',1,'plotIndividuals',1, 'doStats', 0);
-    hold on; yline(0, 'k:');
-    box off;
-    ylabel([cg{i} ' effect']);
-    xlim([0 50])
-    ylim([-25 25])
+DrawVelFigures(dmvAf, dmAccel, cg, on_off, doHC)
 
-    if doPerm
-        y1 = diff( sq(dmvAf(:,:,i,1:2)),[],3); % PD ON vs OFF
-        x = ones(nPP,1);
-        [~,p]=permutationOLS( y1, [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
-        hold on;
-        pbar(p, 'yVal', min(ylim));
-        if doPerm > 1 % sep bars for each cond vs zero
-            for j=1:doPerm
-                y1 = sq(dmvAf(:,:,i,j));
-                x = ones(nPP,1);
-                [~,p]=permutationOLS( y1, [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
-                hold on;
-                pbar(p, 'yVal', min(ylim) + (diff(ylim)/30)*j, 'plotargs', {'Color', c(1+n-j,:),'LineWidth',5});
-            end
-        end
+% source data
+readme = "Data to create Figure 3. Please download the ContingentAnalysis GitHub repo and Matlib repo (links available in paper), and then run: DrawVelFigures(dmvAf, dmAccel, cg, on_off, 1);";
+save('Figure3SourceData.mat', 'dmvAf', 'dmAccel','cg','on_off','doHC','readme');
+
+%% plot indiv
+figure();
+cols = get(gca,'ColorOrder'); %cols = cols([3 1 2], :);
+alpha = .5; 
+n=3;
+% vel
+for i = 1:2
+    subplot(2,2,i*2-1)
+    
+    for j=n:-1:1
+        hold on
+        plot(dmvAf(:,:,i,j)', '-', 'Color', [cols(j,:) alpha]);
     end
-   if i==1
+
+    if i==1
        title('Velocity (deg/s)');
        set(gca,'XTick',[]);
-   else
-       xlabel('timepoint within saccade')
-   end
-   set(gca,'XTick',0:25:50, 'YTick', -20:20:20);
+    else
+       xlabel('% of time through saccade')
+    end
+    set(gca,'XTick',0:25:50,'XTickLabel',0:50:100);
+    xlim([0 50]);
+    ylabel([cg{i} ' effect']);
 
 end
 
-% now do accel
+% accel
+h = [];
 for i = 1:2
-    subplot(2,2,i*2);
+    subplot(2,2,i*2)
     
-    h = errorBarPlot(sq(dmAccel(:,:,i,1:n)), 'area',1,'plotIndividuals',1, 'doStats', 0);
-    hold on; yline(0, 'k:');
-    box off;
-   xlim([0 50])
-    ylim([-5 5])
-
-
-    if doPerm
-        y1 = diff( sq(dmAccel(:,:,i,1:2)),[],3);
-        x = ones(nPP,1);
-        [~,p]=permutationOLS( y1, [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
-        hold on;
-        pbar(p, 'yVal', min(ylim));
-        if doPerm > 1 % sep bars for each cond
-            for j=1:doPerm
-                y1 = sq(dmAccel(:,:,i,j));
-                x = ones(nPP,1);
-                [~,p]=permutationOLS( y1, [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
-                hold on;
-                pbar(p, 'yVal', min(ylim) + (diff(ylim)/30)*j, 'plotargs', {'Color', c(1+n-j,:),'LineWidth',5});
-            end
-        end
+    for j=n:-1:1
+        hold on
+        h(:,j) = plot(dmAccel(:,:,i,j)', '-', 'Color', [cols(j,:) alpha]);
     end
-   if i==1
+
+    if i==1
        title('Acceleration (deg/s^2)');
        set(gca,'XTick',[]);
-   else
-       xlabel('timepoint within saccade')
+    else
+       xlabel('% of time through saccade')
+    end
+    set(gca,'XTick',0:25:50,'XTickLabel',0:50:100);
 
-   end
-   set(gca,'XTick',0:25:50,'YTick',-5:5:5);
-
+    xlim([0 50])
 end
 
-legend([h{:,1}], on_off, 'Location','Best')
-
+legend(h(1,:), fliplr(on_off), 'Location', [0.3220 0.3672 0.1482 0.1548]);
 %%
 
 save('ContingentVelocity.mat')

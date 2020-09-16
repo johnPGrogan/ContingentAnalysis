@@ -2,7 +2,8 @@
 
 clear; close all;
 
-load('./ContingentAnalysis.mat','doHC', 'on_off', 'cg', 'tt', 'nPD', 'xlabs', 'vr', 'dmvr', 'rw', 'nConds','nPP');
+load('./ContingentAnalysis.mat','doHC', 'on_off', 'cg', 'tt', 'nPD',...
+    'xlabs', 'vr', 'dmvr', 'rw', 'nConds','nPP','bad_sub','bad_sub2','xlabs');
 
 %% parse pupil size for each trial
 clear P Q
@@ -48,6 +49,11 @@ else
 end
 %% plot pupil cue responses - differences by condition
 p=sq(nancat(P)); % concatenate subjects and sessions
+
+% remove bad pps
+p(:,:,bad_sub,1:2) = NaN;
+p(:,:,bad_sub2,3) = NaN;
+
 tt_p = repmat(permute(tt,[1,4,2,3]),[1,size(p,2),1,1]); % trial types for each sample
 % now p ( trial, time, sub, drug) 
 p=groupMeans(p,1, tt_p ,'dim'); % split by condition
@@ -75,78 +81,58 @@ p=smoothn(2,p,20); % 400 ms smooth
 t = 0:400:2400;
 
 
-%%
-n=2;
+
+%% plot indiv
 figure();
-c = get(gca,'ColorOrder');
-c = c(n:-1:1,:);
+cols = get(gca,'ColorOrder'); %cols = cols([3 1 2], :);
+alpha = .5;
+h = [];
+for j = 1:2
+    subplot(2,1,j)
 
-subplot(2,1,1);
-set(gca,'ColorOrder',c);
-h = errorBarPlot( sq(-diff(p(:,:,[1 2],n:-1:1),[],3)) , 'area',1,'withinsubjecterror',0, 'doStats', 0); 
-xlim([0 70]);
-set(gca, 'XTick',[]);%0:20:120,'XTickLabel',t);
-hold on; 
-plot(xlim,[0 0],'--k','linewidth',1); hold off
-% xlabel('ms after cue')
-ylabel('Contigent effect')
-box off
+    x = sq(-diff(p(:,:,[j*2-1 j*2],:),[],3));
 
-subplot(2,1,2);
-set(gca,'ColorOrder',c);
-errorBarPlot( sq(-diff(p(:,:,[3 4],n:-1:1),[],3)) , 'area',1,'withinsubjecterror',0, 'doStats', 0);
-xlim([0 70]);
-set(gca, 'XTick',0:20:120,'XTickLabel',t);
-% title '10p minus 0p';
-hold on; 
-plot(xlim,[0 0],'--k','linewidth',1); hold off
-xlabel('ms after cue')
-ylabel('Guaranteed effect')
-box off
+    hold on
+    for i = 1:3
+        h(:,i) = plot(x(:,:,i)','-','Color', [cols(i,:), alpha], 'LineWidth',1);
+    end
+    
+    xlim([0 70]);
+    set(gca, 'XTick',0:20:120,'XTickLabel',t);
+    % title '10p minus 0p';
+    hold on; 
+    plot(xlim,[0 0],'--k','linewidth',1); hold off
+    xlabel('ms after cue')
+    ylabel([cg{j} ' effect'])
+    box off
+end
 
-legend([h{n:-1:1,1}],on_off,'Location','Best'); 
-
-
+legend(h(1,:), {'ON', 'OFF', 'HC'}, 'Location',[0.1476 0.8088 0.1482 0.1548]);
 makeSubplotScalesEqual(2,1);
 SuperTitle('Pupil dilatation (a.u.)');
 drawnow
 
-%% 
+%% stats + fig
+
 pupRew = p(:,:,[1 3],:) - p(:,:,[2 4],:); % rew effects
 xt = 1:70;
-figure();
-doPerm=1; useClust=0; nPerms=5000;
-for i = 1:3
-    subplot(2,2,i);
-    h = errorBarPlot(pupRew(:,xt,:,i), 'area',1,'xaxisvalues',xt*20, 'doStats', 0);
-    yline(0,':k');
-    if doPerm
-        y1 = diff(pupRew(:,xt,:,i),[],3);
-%         y1 = reshape(permute(pupRew(:,xt,:,i),[1,3,2]),[],length(xt));
-%         x = kron([1:2]',ones(nPP,1));
-        [~,p1]=permutationOLS( y1, [],[],[],'cluster',useClust,'clustermethod','mean','two_tailed',true,'nperms',nPerms);
-%         [~,p1] = ttest(y1);
-        hold on;
-        pbar(p1, 'yVal', min(ylim));
-    end
-    xlabel('time (ms)')
-    ylabel('rew effect on pupil')
-    title(on_off{i});
-    xlim([0 1400]);
-end
-makeSubplotScalesEqual(2,2,1:3);
+DrawPupilFigures(pupRew, xt, on_off, cg, doHC)
 
-legend([h{:,1}], cg,'Location','Best')
+% source data
+readme = "Data to create Figure 6. Please download the ContingentAnalysis GitHub repo and Matlib repo (links available in paper), and then run: DrawPupilFigures(pupRew, xt, on_off, cg, doHC);";
+save('Figure6SourceData.mat', 'pupRew','xt','cg','xlabs','doHC','on_off','readme');
+
 
 %%
 % region-of-interest based anova
 % 30:50 is 600 to 1000 ms.
 % 50:70 is 1000 to 1400 ms
+n=3;
 roi = 50:70; 
-P_roi = reshape(nanmean(p(:,roi,:,1:2),2),[size(p,1), 2,2,2]); 
+P_roi = reshape(nanmean(p(:,roi,:,1:n),2),[size(p,1), 2,2,n]); 
 
-pupAnova = rmanova( P_roi, {'sub','mot','cont','drg'},'categorical', [2 3 4],'DummyVarCoding','effects')
-etaSqP = pupAnova.FStat.*pupAnova.DF1) ./ (pupAnova.FStat.*pupAnova.DF1 + pupAnova.DF2; % partial eta sq
+pupAnova = rmanova( P_roi(:,:,:,1:2), {'sub','mot','cont','drg'},'categorical', [2 3 4],'DummyVarCoding','effects')
+pupAnova.etaSqP = (pupAnova.FStat.*pupAnova.DF1) ./ (pupAnova.FStat.*pupAnova.DF1 + pupAnova.DF2); % partial eta sq
 
 % then via permutation t-test
 py0  = reshape( p(:,:,:,1:2), size(p,1),size(p,2), 2,2,2 );
@@ -204,6 +190,25 @@ subplot(2,1,2)
 imagep(pvalMot, {'c','mot','drg','mot*drg'})
 
 
+%% HC vs ON/OFF
+etaSqP = @(x) (x.FStat.*x.DF1) ./ (x.FStat.*x.DF1 + x.DF2); % function for partial eta squared
+
+for i = 1:2
+    pAnTabHC{i} = rmanova(P_roi(:,:,:,[i 3]), {'sub','mot','cont','drg'},'categorical', [2 3 4],'DummyVarCoding','effects');
+    pAnTabHC{i}.etaSqP = etaSqP(pAnTabHC{i});
+
+    py0  = reshape( p(:,:,:,[i 3]), size(p,1),size(p,2), 2,2,2 );
+    % [~,pval]=permutationOLS(py0);
+    py   = reshape( permute(py0,[1 3 4 5 2]), [],size(p,2) ); 
+    px0  = [ flat( bsxfun(@times, permute( [1:size(py0,1)]', [1,2]       ), ones(size(py0(:,1,:,:,:))) ) )  ...
+             flat( bsxfun(@times, permute( [1:size(py0,3)]', [2,3,1]     ), ones(size(py0(:,1,:,:,:))) ) )  ...
+             flat( bsxfun(@times, permute( [1:size(py0,4)]', [2,3,4,1]   ), ones(size(py0(:,1,:,:,:))) ) )  ...
+             flat( bsxfun(@times, permute( [1:size(py0,5)]', [2,3,4,5,1] ), ones(size(py0(:,1,:,:,:))) ) )
+           ];
+    px = x2fx( nanzscore(px0(:,[2:4])), fullfact([2,2,2])-1);
+    [ ~, pvalHC(:,:,i) ] = permutationOLS( py, px , eye(size(px,2)), px0(:,1) );
+
+end
 %% does pupil dilation differ between trials
 % % get max change in pupil size per trial - 1200:1400
 pupDiff = sq(nanmean(pTr(:,:,60:70,:,:), [3]));

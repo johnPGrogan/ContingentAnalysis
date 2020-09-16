@@ -18,12 +18,14 @@ file_template = {
 }  ;
 
 ppIDs = cell(31,3);
+timestamps = ppIDs;
 for i=1:31 % for each subject
   for j=1:2 % on and off
     fn = sprintf(file_template{j},i); % create filename
     try
       result_ij=load(fn);  % load the file
       result{i,j} = result_ij.result.data; % extract the per-trial data
+      timestamps{i,j} = result_ij.result.startTimes; % store timestamp for order
       ppIDs{i,j} = sprintf('PD_%03d',i);
     catch mexp
       fprintf('unable to read %s\n',fn);
@@ -55,6 +57,7 @@ for i=1:length(files.mat) % for each subject
     try
       result_ij=load(fn);  % load the file
       resultHC{i,j} = result_ij.result.data; % extract the per-trial data
+      timestamps{i,3} = result_ij.result.startTimes; % store timestamp for order
       ppIDs{i,3} = sprintf('EHC_%03d',str2num(files.mat{i}(regexp(files.mat{i}, '\d'))));
     catch mexp
       fprintf('unable to read %s\n',fn);
@@ -73,7 +76,6 @@ nTrHC = cellfun(@length,resultHC); % num trials ( sub, onoff )
 
 %% save (result is large variable)
 
-save('./ContingentPDData.mat','-v7.3','result','on_off','cond_names','nTr', 'resultHC', 'nTrHC', 'ppIDs');
-
+save('./ContingentPDData.mat','-v7.3','result','on_off','cond_names','nTr', 'resultHC', 'nTrHC', 'ppIDs','timestamps');
 
 end
